@@ -245,10 +245,10 @@ class Smarty_Internal_Compile_Foreach extends Smarty_Internal_Compile_Private_Fo
                 $output .= "{$foreachVar}->value['index']++;\n";
             }
             if (isset($namedAttr[ 'first' ])) {
-                $output .= "{$foreachVar}->value['first'] = !{$foreachVar}->value['index'];\n";
+                $output .= "{$foreachVar}->value['first'] = !{$foreachVar}?->value['index'];\n";
             }
             if (isset($namedAttr[ 'last' ])) {
-                $output .= "{$foreachVar}->value['last'] = {$foreachVar}->value['iteration'] === {$foreachVar}->value['total'];\n";
+                $output .= "{$foreachVar}->value['last'] = {$foreachVar}?->value['iteration'] === {$foreachVar}?->value['total'];\n";
             }
         }
         if (!empty($itemAttr)) {

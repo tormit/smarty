@@ -65,7 +65,7 @@ class Smarty_Internal_Compile_For extends Smarty_Internal_CompileBase
                 $var = $_attr[ 'var' ];
                 $index = '';
             }
-            $output .= "if ($_attr[ifexp]) {\nfor (\$_foo=true;$_attr[ifexp]; \$_smarty_tpl->tpl_vars[$var]->value{$index}$_attr[step]) {\n";
+            $output .= "if ($_attr[ifexp]) {\nfor (\$_foo=true;$_attr[ifexp]; \$_smarty_tpl->tpl_vars[$var]?->value{$index}$_attr[step]) {\n";
         } else {
             $_statement = $_attr[ 'start' ];
             if (is_array($_statement[ 'var' ])) {
