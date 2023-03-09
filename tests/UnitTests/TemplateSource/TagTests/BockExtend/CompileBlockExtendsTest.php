@@ -17,7 +17,7 @@ class CompileBlockExtendsTest extends PHPUnit_Smarty
 {
     public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
         //$this->smarty->setMergeCompiledIncludes(true);
     }
 
@@ -1370,5 +1370,9 @@ class CompileBlockExtendsTest extends PHPUnit_Smarty
                      array("A{nocache}\n{block name='a'}\n{\$foo}\n{/block}\n{/nocache}C", "A\n\nbar\n\nC", 'Var4', $i++),
         );
     }
+
+	public function testBlockWithAssign() {
+		$this->assertEquals('Captured content is: Content with lots of html here', $this->smarty->fetch('038_child.tpl'));
+	}
 
 }

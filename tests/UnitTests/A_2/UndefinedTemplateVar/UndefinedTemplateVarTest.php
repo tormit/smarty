@@ -15,7 +15,7 @@ class UndefinedTemplateVarTest extends PHPUnit_Smarty
      */
     public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
     }
 
     public function testInit()
@@ -88,14 +88,12 @@ class UndefinedTemplateVarTest extends PHPUnit_Smarty
     }
 
     public function testUndefinedSimpleVar() {
-        $this->smarty->setErrorReporting(E_ALL & ~E_NOTICE);
         $this->smarty->muteUndefinedOrNullWarnings();
         $tpl = $this->smarty->createTemplate('string:a{if $undef}def{/if}b');
         $this->assertEquals("ab", $this->smarty->fetch($tpl));
     }
 
     public function testUndefinedArrayIndex() {
-        $this->smarty->setErrorReporting(E_ALL & ~E_NOTICE);
         $this->smarty->muteUndefinedOrNullWarnings();
         $tpl = $this->smarty->createTemplate('string:a{if $ar.undef}def{/if}b');
         $tpl->assign('ar', []);
@@ -103,7 +101,6 @@ class UndefinedTemplateVarTest extends PHPUnit_Smarty
     }
 
     public function testUndefinedArrayIndexDeep() {
-        $this->smarty->setErrorReporting(E_ALL & ~E_NOTICE);
         $this->smarty->muteUndefinedOrNullWarnings();
         $tpl = $this->smarty->createTemplate('string:a{if $ar.undef.nope.neither}def{/if}b');
         $tpl->assign('ar', []);
@@ -133,5 +130,52 @@ class UndefinedTemplateVarTest extends PHPUnit_Smarty
         $this->assertTrue($exceptionThrown);
     }
 
+    public function testUsingNullAsAnArrayIsMuted() {
+        $this->smarty->setErrorReporting(E_ALL);
+        $this->smarty->muteUndefinedOrNullWarnings();
+        $tpl = $this->smarty->createTemplate('string:a{if $undef.k}def{/if}b');
+        $this->assertEquals("ab", $this->smarty->fetch($tpl));
+    }
+
+    public function testUsingFalseAsAnArrayIsMuted() {
+        $this->smarty->setErrorReporting(E_ALL);
+        $this->smarty->muteUndefinedOrNullWarnings();
+        $tpl = $this->smarty->createTemplate('string:a{if $nottrue.k}def{/if}b');
+        $this->smarty->assign('nottrue', false);
+        $this->assertEquals("ab", $this->smarty->fetch($tpl));
+    }
+
+	/**
+	 * @group 20221124
+	 */
+	public function testDereferenceOnNull() {
+		$this->smarty->setErrorReporting(E_ALL & ~E_WARNING & ~E_NOTICE);
+		$this->smarty->muteUndefinedOrNullWarnings();
+		$tpl = $this->smarty->createTemplate('string:a{if $object->myprop}def{/if}b');
+		$this->smarty->assign('object', null);
+		$this->assertEquals("ab", $this->smarty->fetch($tpl));
+	}
+
+	/**
+	 * @group 20221124
+	 */
+	public function testDereferenceOnBool() {
+		$this->smarty->setErrorReporting(E_ALL & ~E_NOTICE);
+		$this->smarty->muteUndefinedOrNullWarnings();
+		$tpl = $this->smarty->createTemplate('string:a{if $object->myprop}def{/if}b');
+		$this->smarty->assign('object', false);
+		$this->assertEquals("ab", $this->smarty->fetch($tpl));
+	}
+
+	/**
+	 * @group 20221124
+	 */
+	public function testDereferenceOnString() {
+		$this->smarty->setErrorReporting(E_ALL & ~E_NOTICE);
+		$this->smarty->muteUndefinedOrNullWarnings();
+		$tpl = $this->smarty->createTemplate('string:a{if $object->myprop}def{/if}b');
+		$this->smarty->assign('object', 'xyz');
+		$this->assertEquals("ab", $this->smarty->fetch($tpl));
+	}
 
 }

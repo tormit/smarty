@@ -5,7 +5,8 @@
 lexer/*.php
 lexer/*.php.bak
 lexer/*.out
-utilies/*.php
+
+/site
 
 # Dev
 phpunit*

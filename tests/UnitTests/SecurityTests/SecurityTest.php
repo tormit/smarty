@@ -17,7 +17,7 @@ class SecurityTest extends PHPUnit_Smarty
 {
     public function setUp(): void
     {
-        $this->setUpSmarty(dirname(__FILE__));
+        $this->setUpSmarty(__DIR__);
 
         $this->smarty->setForceCompile(true);
         $this->smarty->enableSecurity();
@@ -52,7 +52,7 @@ class SecurityTest extends PHPUnit_Smarty
  */
     public function testTrustedPHPFunction()
     {
-        $this->assertEquals("5", $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{count($foo)}'));
+        $this->assertEquals("5", $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{sizeof($foo)}'));
     }
 
 /**
@@ -63,9 +63,9 @@ class SecurityTest extends PHPUnit_Smarty
     public function testNotTrustedPHPFunction()
     {
         $this->expectException('SmartyException');
-        $this->expectExceptionMessage('PHP function \'count\' not allowed by security setting');
+        $this->expectExceptionMessage('PHP function \'sizeof\' not allowed by security setting');
         $this->smarty->security_policy->php_functions = array('null');
-        $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{count($foo)}');
+        $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{sizeof($foo)}');
     }
 
 /**
@@ -75,38 +75,41 @@ class SecurityTest extends PHPUnit_Smarty
     {
         $this->smarty->security_policy->php_functions = array('null');
         $this->smarty->disableSecurity();
-        $this->assertEquals("5", $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{count($foo)}'));
+        $this->assertEquals("5", $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{sizeof($foo)}'));
     }
 
 /**
  * test trusted modifier
+ * @deprecated
  */
     public function testTrustedModifier()
     {
-        $this->assertEquals("5", $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{$foo|@count}'));
+        $this->assertEquals("5", @$this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{$foo|@sizeof}'));
     }
 
 /**
  * test not trusted modifier
   * @runInSeparateProcess
   * @preserveGlobalState disabled
+ *  @deprecated
  */
     public function testNotTrustedModifier()
     {
         $this->expectException('SmartyException');
-        $this->expectExceptionMessage('modifier \'count\' not allowed by security setting');
+        $this->expectExceptionMessage('modifier \'sizeof\' not allowed by security setting');
         $this->smarty->security_policy->php_modifiers = array('null');
-        $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{$foo|@count}');
+        @$this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{$foo|@sizeof}');
     }
 
 /**
  * test not trusted modifier at disabled security
+ * @deprecated
  */
     public function testDisabledTrustedModifier()
     {
         $this->smarty->security_policy->php_modifiers = array('null');
         $this->smarty->disableSecurity();
-        $this->assertEquals("5", $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{$foo|@count}'));
+        @$this->assertEquals("5", $this->smarty->fetch('string:{assign var=foo value=[1,2,3,4,5]}{$foo|@sizeof}'));
     }
 
 /**
@@ -234,7 +237,7 @@ class SecurityTest extends PHPUnit_Smarty
     {
         $this->expectException('SmartyException');
         $this->expectExceptionMessage('not trusted file path');
-        $this->smarty->security_policy->secure_dir = array(str_replace('\\', '/', dirname(__FILE__) . '/templates_3/'));
+        $this->smarty->security_policy->secure_dir = array(str_replace('\\', '/', __DIR__ . '/templates_3/'));
         $this->smarty->fetch('string:{include file="templates_2/hello.tpl"}');
      }
 
@@ -257,18 +260,40 @@ class SecurityTest extends PHPUnit_Smarty
         $this->assertEquals('25', $this->smarty->fetch($tpl));
     }
 
-/**
- * test not trusted PHP function
-  * @runInSeparateProcess
-  * @preserveGlobalState disabled
-  */
-    public function testNotTrustedStaticClass()
-    {
+	/**
+	 * test not trusted PHP function
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function testNotTrustedStaticClass()
+	{
         $this->expectException('SmartyException');
         $this->expectExceptionMessage('access to static class \'mysecuritystaticclass\' not allowed by security setting');
         $this->smarty->security_policy->static_classes = array('null');
         $this->smarty->fetch('string:{mysecuritystaticclass::square(5)}');
     }
+
+	/**
+	 * test not trusted PHP function
+	 */
+	public function testNotTrustedStaticClassEval()
+	{
+		$this->expectException('SmartyException');
+		$this->expectExceptionMessage('dynamic static class not allowed by security setting');
+		$this->smarty->security_policy->static_classes = array('null');
+		$this->smarty->fetch('string:{$test = "mysecuritystaticclass"}{$test::square(5)}');
+	}
+
+	/**
+	 * test not trusted PHP function
+	 */
+	public function testNotTrustedStaticClassSmartyVar()
+	{
+		$this->expectException('SmartyException');
+		$this->expectExceptionMessage('dynamic static class not allowed by security setting');
+		$this->smarty->security_policy->static_classes = array('null');
+		$this->smarty->fetch('string:{$smarty.template_object::square(5)}');
+	}
 
     public function testChangedTrustedDirectory()
     {
@@ -344,9 +369,9 @@ class SecurityTest extends PHPUnit_Smarty
 
     /**
      * In security mode, accessing $smarty.template_object should be illegal.
-     * @expectedException SmartyCompilerException
      */
     public function testSmartyTemplateObject() {
+        $this->expectException(SmartyCompilerException::class);
         $this->smarty->display('string:{$smarty.template_object}');
     }
 
@@ -366,6 +391,7 @@ class Security extends Smarty_Security
 {
 
 }
+#[AllowDynamicProperties]
 class ResourceStreamSecurity
 {
     private $position;
@@ -394,7 +420,7 @@ class ResourceStreamSecurity
         $v = &$GLOBALS[$this->varname];
         $l = strlen($data);
         $p = &$this->position;
-        $v = substr($v, 0, $p) . $data . substr($v, $p += $l);
+        $v = substr($v ?? '', 0, $p) . $data . substr($v ?? '', $p += $l);
 
         return $l;
     }
